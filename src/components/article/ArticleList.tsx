@@ -17,41 +17,46 @@ const ArticleList: React.FC<ArticleListProps> = ({ tag, limit = 12, showFilters 
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [showTagFilter, setShowTagFilter] = useState(false);
 
-  useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        setLoading(true);
-        
-        const params: any = { limit };
-        
-        if (selectedTags.length > 0) {
-          params.tag = selectedTags[0]; // Backend expects single tag for now
-        }
-        
-        if (searchTerm) {
-          params.search = searchTerm;
-        }
+useEffect(() => {
+  const fetchArticles = async () => {
+    try {
+      setLoading(true);
 
-        const response = await articlesApi.getAll(params);
-        setArticles(response.data || response || []);
+      const params: any = { limit };
 
-        // For available tags, we'll extract from current articles
-        // In a real app, you might have a separate endpoint for tags
-        if (response.data || response) {
-          const allTags = (response.data || response).flatMap((article: any) => article.tags);
-          const uniqueTags = [...new Set(allTags)];
-          setAvailableTags(uniqueTags);
-        }
-      } catch (error) {
-        console.error('Error fetching articles:', error);
-        setArticles([]);
-      } finally {
-        setLoading(false);
+      if (selectedTags.length > 0) {
+        params.tag = selectedTags[0]; // Backend expects single tag for now
       }
-    };
 
-    fetchArticles();
-  }, [searchTerm, selectedTags, tag, limit]);
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      const response = await articlesApi.getAll(params);
+      setArticles(response.data || response || []);
+
+      if (response.data || response) {
+        const allTags = (response.data || response).flatMap((article: any) => {
+          if (Array.isArray(article.tags)) {
+            return article.tags.filter((tag: unknown): tag is string => typeof tag === "string");
+          }
+          return [];
+        });
+        const uniqueTags = Array.from(new Set(allTags)) as string[];
+        setAvailableTags(uniqueTags);
+      }
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchArticles();
+}, [searchTerm, selectedTags, tag, limit]);
+
+
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
