@@ -7,67 +7,65 @@ interface ArticleListProps {
   tag?: string;
   limit?: number;
   showFilters?: boolean;
+  searchTerm: string; // receive searchTerm from props
 }
 
-const ArticleList: React.FC<ArticleListProps> = ({ tag, limit = 12, showFilters = true }) => {
+const ArticleList: React.FC<ArticleListProps> = ({
+  tag,
+  limit = 12,
+  showFilters = true,
+  searchTerm,
+}) => {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(tag ? [tag] : []);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [showTagFilter, setShowTagFilter] = useState(false);
 
-useEffect(() => {
-  const fetchArticles = async () => {
-    try {
-      setLoading(true);
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        setLoading(true);
 
-      const params: any = { limit };
+        const params: any = { limit };
 
-      if (selectedTags.length > 0) {
-        params.tag = selectedTags[0]; // Backend expects single tag for now
+        if (selectedTags.length > 0) {
+          params.tag = selectedTags[0];
+        }
+
+        if (searchTerm) {
+          params.search = searchTerm;
+        }
+
+        const response = await articlesApi.getAll(params);
+        setArticles(response.data || response || []);
+
+        if (response.data || response) {
+          const allTags = (response.data || response).flatMap((article: any) => {
+            if (Array.isArray(article.tags)) {
+              return article.tags.filter((tag: unknown): tag is string => typeof tag === "string");
+            }
+            return [];
+          });
+          const uniqueTags = Array.from(new Set(allTags)) as string[];
+          setAvailableTags(uniqueTags);
+        }
+      } catch (error) {
+        console.error('Error fetching articles:', error);
+        setArticles([]);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (searchTerm) {
-        params.search = searchTerm;
-      }
-
-      const response = await articlesApi.getAll(params);
-      setArticles(response.data || response || []);
-
-      if (response.data || response) {
-        const allTags = (response.data || response).flatMap((article: any) => {
-          if (Array.isArray(article.tags)) {
-            return article.tags.filter((tag: unknown): tag is string => typeof tag === "string");
-          }
-          return [];
-        });
-        const uniqueTags = Array.from(new Set(allTags)) as string[];
-        setAvailableTags(uniqueTags);
-      }
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-      setArticles([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchArticles();
-}, [searchTerm, selectedTags, tag, limit]);
-
-
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Search is already handled by the useEffect
-  };
+    fetchArticles();
+  }, [searchTerm, selectedTags, tag, limit]);
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag) 
-        : [tag] // Only allow one tag for now
+    setSelectedTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [tag]
     );
   };
 
@@ -97,14 +95,14 @@ useEffect(() => {
     <div className="space-y-6">
       {showFilters && (
         <div className="bg-white p-4 rounded-lg shadow-sm">
-          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+          <form className="flex flex-col md:flex-row gap-4" onSubmit={(e) => e.preventDefault()}>
             <div className="relative flex-grow">
               <input
                 type="text"
                 placeholder="ابحث عن مقالات..."
                 className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005CB9]"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                readOnly
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
             </div>

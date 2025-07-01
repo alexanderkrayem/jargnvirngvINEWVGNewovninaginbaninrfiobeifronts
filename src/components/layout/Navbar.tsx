@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, Menu, X } from 'lucide-react';
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  onSearch: (query: string) => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const location = useLocation();
 
   const toggleMenu = () => {
@@ -13,13 +17,10 @@ const Navbar: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search functionality
-    console.log('Searching for:', searchQuery);
+    onSearch(searchInput.trim());
   };
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="bg-[#005CB9] text-white shadow-md">
@@ -29,7 +30,6 @@ const Navbar: React.FC = () => {
             <Link to="/" className="text-2xl font-bold">طب الأسنان العربي</Link>
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6 space-x-reverse">
             <Link to="/" className={`nav-link ${isActive('/') ? 'font-bold' : ''}`}>
               الرئيسية
@@ -48,8 +48,8 @@ const Navbar: React.FC = () => {
                 type="text"
                 placeholder="ابحث..."
                 className="bg-[#0047A0] text-white px-4 py-2 rounded-full pr-10 placeholder-gray-300 w-44 focus:outline-none focus:ring-2 focus:ring-white"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
               <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2">
                 <Search size={18} />
@@ -57,13 +57,11 @@ const Navbar: React.FC = () => {
             </form>
           </div>
 
-          {/* Mobile menu button */}
           <button className="md:hidden" onClick={toggleMenu}>
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 animate-fadeIn">
             <form onSubmit={handleSearch} className="mb-4">
@@ -72,8 +70,8 @@ const Navbar: React.FC = () => {
                   type="text"
                   placeholder="ابحث..."
                   className="w-full bg-[#0047A0] text-white px-4 py-2 rounded-full pr-10 placeholder-gray-300"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                 />
                 <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <Search size={18} />
