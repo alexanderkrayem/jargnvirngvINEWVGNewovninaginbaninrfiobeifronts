@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Tag } from 'lucide-react';
+import { Clock, Tag, User } from 'lucide-react';
 import { formatDistance } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -38,10 +38,13 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, featured = false }) 
             <span className="inline-block bg-[#005CB9] text-white text-sm font-medium px-3 py-1 rounded-full mb-3">
               مقال مميز
             </span>
-            <h2 className="text-2xl font-bold mb-2">{article.title}</h2>
+            <h2 className="text-2xl font-bold mb-2 line-clamp-2">{article.title}</h2>
             <p className="mb-3 text-gray-200 line-clamp-2">{article.excerpt}</p>
             <div className="flex items-center justify-between">
               <div className="flex items-center text-sm text-gray-300">
+                <User size={16} className="ml-1" />
+                <span>{article.author}</span>
+                <span className="mx-2">•</span>
                 <Clock size={16} className="ml-1" />
                 <span>{formattedDate}</span>
               </div>
@@ -64,7 +67,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, featured = false }) 
         <img 
           src={article.cover_image} 
           alt={article.title} 
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
         />
       </Link>
       <div className="p-5">
@@ -72,8 +75,8 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, featured = false }) 
           {article.tags.slice(0, 2).map((tag, index) => (
             <Link 
               key={index} 
-              to={`/articles?tag=${tag}`}
-              className="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"
+              to={`/articles?tag=${encodeURIComponent(tag)}`}
+              className="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
             >
               <Tag size={12} className="ml-1" />
               {tag}
@@ -81,13 +84,16 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, featured = false }) 
           ))}
         </div>
         <Link to={`/articles/${article.id}`}>
-          <h3 className="text-xl font-bold mb-2 hover:text-[#005CB9] transition-colors">
+          <h3 className="text-xl font-bold mb-2 hover:text-[#005CB9] transition-colors line-clamp-2">
             {article.title}
           </h3>
         </Link>
         <p className="text-gray-600 mb-4 line-clamp-2">{article.excerpt}</p>
         <div className="flex items-center justify-between text-sm text-gray-500">
-          <span>{article.author}</span>
+          <div className="flex items-center">
+            <User size={14} className="ml-1" />
+            <span>{article.author}</span>
+          </div>
           <div className="flex items-center">
             <Clock size={14} className="ml-1" />
             <span>{formattedDate}</span>

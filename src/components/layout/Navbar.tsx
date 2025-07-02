@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Menu, X } from 'lucide-react';
 
-interface NavbarProps {
-  onSearch: (query: string) => void;
-}
-
-const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
+const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -17,10 +14,16 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchInput.trim());
+    if (searchQuery.trim()) {
+      navigate(`/articles?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setIsMenuOpen(false);
+    }
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <header className="bg-[#005CB9] text-white shadow-md">
@@ -30,14 +33,15 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             <Link to="/" className="text-2xl font-bold">طب الأسنان العربي</Link>
           </div>
 
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6 space-x-reverse">
-            <Link to="/" className={`nav-link ${isActive('/') ? 'font-bold' : ''}`}>
+            <Link to="/" className={`nav-link hover:text-blue-200 transition-colors ${isActive('/') ? 'font-bold' : ''}`}>
               الرئيسية
             </Link>
-            <Link to="/articles" className={`nav-link ${isActive('/articles') ? 'font-bold' : ''}`}>
+            <Link to="/articles" className={`nav-link hover:text-blue-200 transition-colors ${isActive('/articles') ? 'font-bold' : ''}`}>
               المقالات
             </Link>
-            <Link to="/research-topics" className={`nav-link ${isActive('/research-topics') ? 'font-bold' : ''}`}>
+            <Link to="/research-topics" className={`nav-link hover:text-blue-200 transition-colors ${isActive('/research-topics') ? 'font-bold' : ''}`}>
               أبحاث علمية
             </Link>
           </nav>
@@ -46,32 +50,34 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
             <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
-                placeholder="ابحث..."
-                className="bg-[#0047A0] text-white px-4 py-2 rounded-full pr-10 placeholder-gray-300 w-44 focus:outline-none focus:ring-2 focus:ring-white"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="ابحث في المقالات..."
+                className="bg-[#0047A0] text-white px-4 py-2 rounded-full pr-10 placeholder-gray-300 w-56 focus:outline-none focus:ring-2 focus:ring-white focus:bg-[#003B78] transition-colors"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:text-blue-200 transition-colors">
                 <Search size={18} />
               </button>
             </form>
           </div>
 
+          {/* Mobile menu button */}
           <button className="md:hidden" onClick={toggleMenu}>
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
+        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 animate-fadeIn">
             <form onSubmit={handleSearch} className="mb-4">
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="ابحث..."
-                  className="w-full bg-[#0047A0] text-white px-4 py-2 rounded-full pr-10 placeholder-gray-300"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="ابحث في المقالات..."
+                  className="w-full bg-[#0047A0] text-white px-4 py-2 rounded-full pr-10 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <Search size={18} />
@@ -79,13 +85,13 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
               </div>
             </form>
             <nav className="flex flex-col space-y-3">
-              <Link to="/" className={`py-2 ${isActive('/') ? 'font-bold' : ''}`} onClick={toggleMenu}>
+              <Link to="/" className={`py-2 hover:text-blue-200 transition-colors ${isActive('/') ? 'font-bold' : ''}`} onClick={toggleMenu}>
                 الرئيسية
               </Link>
-              <Link to="/articles" className={`py-2 ${isActive('/articles') ? 'font-bold' : ''}`} onClick={toggleMenu}>
+              <Link to="/articles" className={`py-2 hover:text-blue-200 transition-colors ${isActive('/articles') ? 'font-bold' : ''}`} onClick={toggleMenu}>
                 المقالات
               </Link>
-              <Link to="/research-topics" className={`py-2 ${isActive('/research-topics') ? 'font-bold' : ''}`} onClick={toggleMenu}>
+              <Link to="/research-topics" className={`py-2 hover:text-blue-200 transition-colors ${isActive('/research-topics') ? 'font-bold' : ''}`} onClick={toggleMenu}>
                 أبحاث علمية
               </Link>
             </nav>

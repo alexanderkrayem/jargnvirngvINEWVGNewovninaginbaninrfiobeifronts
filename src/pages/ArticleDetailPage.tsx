@@ -4,6 +4,7 @@ import { Calendar, User, Tag, ChevronRight, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import ArticleCard from '../components/article/ArticleCard';
+import AuthorCard from '../components/article/AuthorCard';
 import { articlesApi } from '../lib/api';
 
 const ArticleDetailPage: React.FC = () => {
@@ -93,20 +94,20 @@ const ArticleDetailPage: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           {/* Breadcrumbs */}
           <nav className="flex mb-6 text-sm text-gray-600">
-            <Link to="/" className="hover:text-[#005CB9]">الرئيسية</Link>
+            <Link to="/" className="hover:text-[#005CB9] transition-colors">الرئيسية</Link>
             <span className="mx-2">/</span>
-            <Link to="/articles" className="hover:text-[#005CB9]">المقالات</Link>
+            <Link to="/articles" className="hover:text-[#005CB9] transition-colors">المقالات</Link>
             <span className="mx-2">/</span>
-            <span className="text-gray-800">{article.title}</span>
+            <span className="text-gray-800 truncate">{article.title}</span>
           </nav>
 
           {/* Article Header */}
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 leading-tight">
               {article.title}
             </h1>
             
-            <div className="flex flex-wrap items-center text-gray-600 gap-x-6 gap-y-2">
+            <div className="flex flex-wrap items-center text-gray-600 gap-x-6 gap-y-2 mb-6">
               <div className="flex items-center">
                 <User size={16} className="ml-1" />
                 <span>{article.author}</span>
@@ -115,18 +116,24 @@ const ArticleDetailPage: React.FC = () => {
                 <Calendar size={16} className="ml-1" />
                 <span>{formattedDate}</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {article.tags.map((tag: string, index: number) => (
-                  <Link 
-                    key={index}
-                    to={`/articles?tag=${tag}`}
-                    className="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"
-                  >
-                    <Tag size={12} className="ml-1" />
-                    {tag}
-                  </Link>
-                ))}
-              </div>
+              {article.is_featured && (
+                <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                  مقال مميز
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+              {article.tags.map((tag: string, index: number) => (
+                <Link 
+                  key={index}
+                  to={`/articles?tag=${encodeURIComponent(tag)}`}
+                  className="inline-flex items-center text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                >
+                  <Tag size={12} className="ml-1" />
+                  {tag}
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -139,13 +146,19 @@ const ArticleDetailPage: React.FC = () => {
             />
           </div>
 
+          {/* Author Card */}
+          <AuthorCard authorName={article.author} className="mb-8" />
+
           {/* Article Content */}
           <div className="bg-white p-8 rounded-lg shadow-sm mb-8">
             <div className="prose prose-lg max-w-none">
-              <p className="font-bold text-xl mb-4">{article.excerpt}</p>
+              <p className="font-bold text-xl mb-6 text-gray-800 leading-relaxed">{article.excerpt}</p>
               
               {/* Render the actual content from the article */}
-              <div dangerouslySetInnerHTML={{ __html: article.content.replace(/\n/g, '<br>') }} />
+              <div 
+                className="text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: article.content.replace(/\n/g, '<br>') }} 
+              />
             </div>
           </div>
 
@@ -173,13 +186,15 @@ const ArticleDetailPage: React.FC = () => {
               العودة إلى المقالات
             </Link>
             
-            <Link
-              to={relatedArticles.length > 0 ? `/articles/${relatedArticles[0].id}` : '/articles'}
-              className="flex items-center text-[#005CB9] hover:text-[#0047A0] font-medium transition-colors"
-            >
-              المقال التالي
-              <ChevronLeft size={20} className="mr-1" />
-            </Link>
+            {relatedArticles.length > 0 && (
+              <Link
+                to={`/articles/${relatedArticles[0].id}`}
+                className="flex items-center text-[#005CB9] hover:text-[#0047A0] font-medium transition-colors"
+              >
+                المقال التالي
+                <ChevronLeft size={20} className="mr-1" />
+              </Link>
+            )}
           </div>
         </div>
       </div>

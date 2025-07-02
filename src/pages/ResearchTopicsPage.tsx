@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, Filter } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { FileText, Search, Filter, X, Loader } from 'lucide-react';
 import ResearchCard from '../components/research/ResearchCard';
 import { researchApi } from '../lib/api';
 
 const ResearchTopicsPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [researches, setResearches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedJournals, setSelectedJournals] = useState<string[]>([]);
   const [availableJournals, setAvailableJournals] = useState<string[]>([]);
   const [showJournalFilter, setShowJournalFilter] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
 
   useEffect(() => {
     const fetchResearches = async () => {
@@ -19,15 +22,20 @@ const ResearchTopicsPage: React.FC = () => {
         const params: any = {};
         
         if (selectedJournals.length > 0) {
-          params.journal = selectedJournals[0]; // Backend expects single journal for now
+          params.journal = selectedJournals[0];
         }
         
         if (searchTerm) {
           params.search = searchTerm;
         }
 
+        console.log('Fetching research with params:', params);
         const response = await researchApi.getAll(params);
-        setResearches(response.data || response || []);
+        console.log('Research response:', response);
+        
+        const researchData = response.data || response || [];
+        setResearches(researchData);
+        setTotalResults(response.pagination?.total || researchData.length);
 
         // Fetch available journals
         try {
@@ -39,6 +47,7 @@ const ResearchTopicsPage: React.FC = () => {
       } catch (error) {
         console.error('Error fetching researches:', error);
         setResearches([]);
+        setTotalResults(0);
       } finally {
         setLoading(false);
       }
@@ -47,9 +56,25 @@ const ResearchTopicsPage: React.FC = () => {
     fetchResearches();
   }, [searchTerm, selectedJournals]);
 
+  // Update URL when search changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) {
+      params.set('search', searchTerm);
+    }
+    if (selectedJournals.length > 0) {
+      params.set('journal', selectedJournals[0]);
+    }
+    setSearchParams(params);
+  }, [searchTerm, selectedJournals, setSearchParams]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search is already handled by the useEffect
+    // Search is handled by useEffect
+  };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   const toggleJournal = (journal: string) => {
@@ -58,6 +83,12 @@ const ResearchTopicsPage: React.FC = () => {
         ? prev.filter(j => j !== journal) 
         : [journal] // Only allow one journal for now
     );
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setSelectedJournals([]);
+    setSearchParams({});
   };
 
   const toggleJournalFilter = () => {
@@ -84,45 +115,114 @@ const ResearchTopicsPage: React.FC = () => {
               <input
                 type="text"
                 placeholder="ابحث في الأبحاث العلمية..."
-                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005CB9]"
+                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#005CB9] focus:border-transparent"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchInputChange}
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute left-10 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={toggleJournalFilter}
-              className="flex items-center justify-center px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <Filter size={18} className="ml-2" />
-              <span>تصفية حسب المجلة</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={toggleJournalFilter}
+                className={`flex items-center justify-center px-4 py-3 rounded-lg transition-colors ${
+                  showJournalFilter ? 'bg-[#005CB9] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                <Filter size={18} className="ml-2" />
+                <span>تصفية حسب المجلة</span>
+              </button>
+              {(searchTerm || selectedJournals.length > 0) && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="flex items-center justify-center px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                >
+                  <X size={18} className="ml-2" />
+                  <span>مسح</span>
+                </button>
+              )}
+            </div>
           </form>
 
-          {showJournalFilter && (
-            <div className="mt-4 flex flex-wrap gap-2 animate-fadeIn">
-              {availableJournals.map((journal) => (
-                <button
+          {/* Active filters display */}
+          {(searchTerm || selectedJournals.length > 0) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {searchTerm && (
+                <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                  البحث: "{searchTerm}"
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="mr-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              )}
+              {selectedJournals.map((journal) => (
+                <span
                   key={journal}
-                  onClick={() => toggleJournal(journal)}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    selectedJournals.includes(journal)
-                      ? 'bg-[#005CB9] text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  } transition-colors`}
+                  className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
                 >
-                  {journal}
-                </button>
+                  المجلة: {journal}
+                  <button
+                    onClick={() => toggleJournal(journal)}
+                    className="mr-2 text-green-600 hover:text-green-800"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
               ))}
             </div>
           )}
+
+          {showJournalFilter && availableJournals.length > 0 && (
+            <div className="mt-4 animate-fadeIn">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">تصفية حسب المجلة:</h4>
+              <div className="flex flex-wrap gap-2">
+                {availableJournals.map((journal) => (
+                  <button
+                    key={journal}
+                    onClick={() => toggleJournal(journal)}
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      selectedJournals.includes(journal)
+                        ? 'bg-[#005CB9] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {journal}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Results counter */}
+          <div className="mt-4 text-sm text-gray-600">
+            {loading ? (
+              <div className="flex items-center">
+                <Loader className="animate-spin ml-2" size={16} />
+                جاري البحث...
+              </div>
+            ) : (
+              `تم العثور على ${totalResults} بحث${totalResults !== 1 ? '' : ''}`
+            )}
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-            <div className="text-4xl font-bold text-[#005CB9] mb-2">{researches.length}</div>
+            <div className="text-4xl font-bold text-[#005CB9] mb-2">{totalResults}</div>
             <p className="text-gray-600">بحث علمي</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-sm text-center">
@@ -158,9 +258,20 @@ const ResearchTopicsPage: React.FC = () => {
           <div className="text-center py-12">
             <FileText size={64} className="mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-bold text-gray-700 mb-2">لا توجد أبحاث متطابقة</h3>
-            <p className="text-gray-600">
-              لم نتمكن من العثور على أبحاث تطابق معايير البحث. يرجى تعديل المعايير والمحاولة مرة أخرى.
+            <p className="text-gray-600 mb-4">
+              {searchTerm || selectedJournals.length > 0 
+                ? 'لم نتمكن من العثور على أبحاث تطابق معايير البحث. جرب كلمات مختلفة أو امسح المرشحات.'
+                : 'لا توجد أبحاث متاحة حالياً.'
+              }
             </p>
+            {(searchTerm || selectedJournals.length > 0) && (
+              <button
+                onClick={clearSearch}
+                className="bg-[#005CB9] hover:bg-[#0047A0] text-white px-6 py-2 rounded-md transition-colors"
+              >
+                مسح المرشحات
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
