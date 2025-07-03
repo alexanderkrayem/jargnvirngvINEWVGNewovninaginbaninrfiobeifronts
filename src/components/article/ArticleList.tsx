@@ -43,16 +43,19 @@ const ArticleList: React.FC<ArticleListProps> = ({ tag, limit = 12, showFilters 
         setArticles(articlesData);
         setTotalResults(response.pagination?.total || articlesData.length);
 
-        // Extract unique tags from all articles for filtering - FIX TYPE ISSUE
+        // Extract unique tags from all articles for filtering
         if (articlesData.length > 0) {
-          const allTags = articlesData.flatMap((article: any) => {
-            // Ensure tags is an array and contains only strings
+          const allTags: string[] = [];
+          articlesData.forEach((article: any) => {
             if (Array.isArray(article.tags)) {
-              return article.tags.filter((tag: any): tag is string => typeof tag === 'string');
+              article.tags.forEach((tag: any) => {
+                if (typeof tag === 'string') {
+                  allTags.push(tag);
+                }
+              });
             }
-            return [];
           });
-          const uniqueTags = [...new Set(allTags)] as string[];
+          const uniqueTags = [...new Set(allTags)];
           setAvailableTags(uniqueTags);
         } else {
           setAvailableTags([]);
